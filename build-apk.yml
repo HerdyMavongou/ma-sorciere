@@ -1,6 +1,5 @@
 name: Construire l'APK Ma Sorcière
 
-# Se lance a chaque push, et manuellement depuis l'onglet Actions.
 on:
   push:
   workflow_dispatch:
@@ -24,11 +23,19 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Générer le dossier android/
-        run: flutter create --org com.herdy --project-name ma_sorciere --platforms=android .
+      # flutter create tourne dans un dossier TEMPORAIRE, en dehors du dépôt,
+      # pour ne jamais risquer d'écraser lib/main.dart, pubspec.yaml ou test/.
+      - name: Générer android/ (isolé) puis le copier dans le projet
+        run: |
+          scaffold="$(mktemp -d)"
+          flutter create --org com.herdy --project-name ma_sorciere --platforms=android "$scaffold/scaffold"
+          rm -rf android
+          cp -R "$scaffold/scaffold/android" ./android
 
-      - name: Restaurer le code source de l'application
-        run: git checkout -- lib pubspec.yaml test || true
+      - name: Vérifier que le code source du projet est bien celui attendu
+        run: |
+          test -f lib/main.dart
+          grep -q "MaSorciereApp" lib/main.dart
 
       - name: Appliquer les patchs Android
         run: python3 tool/patch_android.py

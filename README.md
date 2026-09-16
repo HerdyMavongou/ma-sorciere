@@ -79,8 +79,15 @@ de compilation liées à Gradle).
 ```bash
 cd ma_sorciere
 
-# 1) Génère android/ (et ios/) sans toucher au code déjà écrit
-flutter create --org com.herdy --project-name ma_sorciere --platforms=android .
+# 1) Génère android/ dans un dossier temporaire ISOLÉ, puis copie
+#    uniquement ce dossier dans le projet. Ne touche jamais à lib/,
+#    pubspec.yaml ou test/ : c'est ./build_apk.sh qui fait exactement ça.
+./build_apk.sh
+exit 0  # (retire cette ligne si tu préfères dérouler les étapes toi-même ci-dessous)
+
+scaffold=$(mktemp -d)
+flutter create --org com.herdy --project-name ma_sorciere --platforms=android "$scaffold/scaffold"
+rm -rf android && cp -R "$scaffold/scaffold/android" ./android
 
 # 2) Récupère les dépendances
 flutter pub get
